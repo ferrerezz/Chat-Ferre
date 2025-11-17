@@ -31,13 +31,13 @@ const FilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onR
         previewElement = <audio src={previewUrl} controls />;
     } else if (file.type === 'application/pdf') {
         previewElement = (
-             <div className="flex items-center gap-2 p-2 bg-gray-700 rounded-lg">
+             <div className="flex items-center gap-2 p-2 bg-slate-700 rounded-lg">
                 <PdfIcon className="w-6 h-6 text-red-400 flex-shrink-0" />
-                <span className="text-sm text-gray-200 truncate">{file.name}</span>
+                <span className="text-sm text-slate-200 truncate">{file.name}</span>
             </div>
         )
     } else {
-        previewElement = <div className="text-sm p-2 bg-gray-700 rounded-lg">{file.name}</div>
+        previewElement = <div className="text-sm p-2 bg-slate-700 rounded-lg">{file.name}</div>
     }
 
     return (
@@ -101,16 +101,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, 
   }
 
   return (
-    <div className="bg-gray-800 p-4">
+    <div className="bg-transparent p-4">
       <div className="max-w-3xl mx-auto">
         {mediaFile && (
           <FilePreview file={mediaFile} onRemove={handleRemoveFile} />
         )}
-        <div className="flex items-end gap-3 bg-gray-900 rounded-2xl p-2 pr-3 border border-gray-700 focus-within:border-purple-500 transition-colors">
+        <div className="flex items-end gap-2 bg-slate-800 rounded-full p-2 pl-4 border border-slate-700 focus-within:border-purple-500 transition-colors">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-700 transition-colors"
+            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-700 transition-colors"
             aria-label="Attach file"
           >
             <AttachIcon className="w-5 h-5" />
@@ -127,15 +127,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Escribe un mensaje o sube un archivo..."
-            className="flex-grow bg-transparent text-gray-200 placeholder-gray-500 focus:outline-none resize-none max-h-48 px-2 py-2.5"
+            placeholder="Escribe un mensaje..."
+            className="flex-grow bg-transparent text-slate-200 placeholder-slate-500 focus:outline-none resize-none max-h-48 px-2 py-2"
             rows={1}
             disabled={isLoading}
           />
            {isLoading ? (
             <button
                 onClick={onStopGenerating}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+                className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
                 aria-label="Stop generating"
             >
                 <StopIcon className="w-5 h-5" />
@@ -144,7 +144,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, 
             <button
                 onClick={handleSend}
                 disabled={!input.trim() && !mediaFile}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-purple-600 text-white disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
                 aria-label="Send message"
             >
                 <SendIcon className="w-5 h-5" />
@@ -152,7 +152,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, 
             )}
         </div>
       </div>
-      <p className="text-xs text-center text-gray-500 pt-3">
+      <p className="text-xs text-center text-slate-500 pt-3">
         Ferre puede cometer errores. Considera verificar la información importante.
       </p>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Chat, Part, GroundingChunk } from '@google/genai';
+import { GoogleGenAI, Chat, Part, GroundingChunk, Content } from '@google/genai';
 import { Message, Role, GroundingSource, Media } from './types';
 import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
@@ -22,12 +22,42 @@ const App: React.FC = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const stopGenerationRef = useRef<boolean>(false);
 
+  // Save chat history to local storage whenever it changes
+  useEffect(() => {
+    // We only save if there's more than the initial welcome message.
+    if (chatHistory.length > 1) {
+      // Strip media before saving, as Blob URLs are not persistent across sessions.
+      const historyToSave = chatHistory.map(({ media, ...rest }) => rest);
+      localStorage.setItem('chatFerreHistory', JSON.stringify(historyToSave));
+    }
+  }, [chatHistory]);
+
+  // Initialize chat session, loading from history if available
   useEffect(() => {
     const initChat = async () => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        
+        const savedHistoryJSON = localStorage.getItem('chatFerreHistory');
+        let historyForAI: Content[] = [];
+        let historyForUI: Message[] = [];
+
+        if (savedHistoryJSON) {
+            const savedHistory = JSON.parse(savedHistoryJSON);
+            if (Array.isArray(savedHistory) && savedHistory.length > 0) {
+                historyForUI = savedHistory;
+                historyForAI = savedHistory
+                    .filter((msg: Message) => msg.role === Role.USER || msg.role === Role.MODEL)
+                    .map((msg: Message) => ({
+                        role: msg.role,
+                        parts: [{ text: msg.parts }]
+                    }));
+            }
+        }
+        
         const newChatSession = ai.chats.create({
           model: 'gemini-2.5-flash',
+          history: historyForAI, // Pass mapped history to the SDK
           config: {
             tools: [{googleSearch: {}}],
             systemInstruction: `Eres un asistente servicial y amigable. Tu nombre es Ferre. Responde en español.
@@ -45,15 +75,21 @@ Sigue estos principios para todas tus respuestas:
           },
         });
         setChatSession(newChatSession);
-         setChatHistory([
-          { role: Role.MODEL, parts: '¡Hola! Soy Ferre. ¿Cómo puedo ayudarte hoy? Puedes hacerme una pregunta, subir una imagen, un documento PDF, un audio o un video.' }
-        ]);
+        
+        if (historyForUI.length > 0) {
+            setChatHistory(historyForUI);
+        } else {
+            setChatHistory([
+              { role: Role.MODEL, parts: '¡Hola! Soy Ferre, tu asistente personal. ¿En qué puedo ayudarte hoy?' }
+            ]);
+        }
       } catch (error) {
         console.error("Initialization error:", error);
-        setChatHistory([{ role: Role.ERROR, parts: 'Failed to initialize the chat session. Please check your API key and configuration.' }]);
+        setChatHistory([{ role: Role.ERROR, parts: 'No se pudo inicializar la sesión de chat. Por favor, verifica tu clave de API y configuración.' }]);
       }
     };
     initChat();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -137,7 +173,7 @@ Sigue estos principios para todas tus respuestas:
 
     } catch (error) {
       console.error("Error sending message:", error);
-      const errorMessage: Message = { role: Role.ERROR, parts: 'An error occurred while getting the response. Please try again.' };
+      const errorMessage: Message = { role: Role.ERROR, parts: 'Ocurrió un error al obtener la respuesta. Por favor, inténtalo de nuevo.' };
       setChatHistory(prev => {
         const newHistory = [...prev];
         // Replace the optimistic message with the error
@@ -151,26 +187,26 @@ Sigue estos principios para todas tus respuestas:
   };
   
   return (
-    <div className="h-screen w-screen bg-gray-900 text-white flex flex-col font-sans">
+    <div className="h-screen w-screen bg-slate-900 text-white flex flex-col font-sans">
       <Header />
-      <main ref={chatContainerRef} className="flex-grow overflow-y-auto pt-20 pb-4">
+      <main ref={chatContainerRef} className="flex-grow overflow-y-auto pt-24 pb-4">
         <div className="max-w-3xl mx-auto">
           {chatHistory.map((msg, index) => (
             <ChatMessage key={index} message={msg} />
           ))}
           {isLoading && chatHistory[chatHistory.length - 1]?.parts === '' && (
-              <div className="flex items-start gap-4 p-4 md:p-6">
+              <div className="flex items-start gap-3 p-4 md:px-6">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-purple-500">
                   <GeminiIcon className="w-5 h-5 animate-pulse" />
                 </div>
-                <div className="flex-grow text-gray-400 pt-1 italic">
+                <div className="max-w-xl rounded-2xl px-4 py-3 shadow-md bg-slate-700 text-slate-400 rounded-bl-none italic">
                   Ferre está pensando...
                 </div>
               </div>
           )}
         </div>
       </main>
-      <footer className="w-full sticky bottom-0 left-0 bg-gray-900/80 backdrop-blur-sm">
+      <footer className="w-full sticky bottom-0 left-0 bg-slate-900/80 backdrop-blur-sm">
         <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} onStopGenerating={handleStopGenerating} />
       </footer>
     </div>
