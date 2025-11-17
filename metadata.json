@@ -1,0 +1,5 @@
+{
+  "name": "daniel ferrero",
+  "description": "Una aplicación de chat personal con IA avanzada. Capaz de analizar imágenes, documentos PDF, audio y video, y con acceso a la web para respuestas actualizadas y precisas.",
+  "requestFramePermissions": []
+}
