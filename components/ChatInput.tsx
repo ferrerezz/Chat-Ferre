@@ -2,23 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SendIcon } from './icons/SendIcon';
 import { AttachIcon } from './icons/AttachIcon';
 import { CloseIcon } from './icons/CloseIcon';
+import { PdfIcon } from './icons/PdfIcon';
+import { StopIcon } from './icons/StopIcon';
 
 interface ChatInputProps {
   onSendMessage: (message: string, file?: File | null) => void;
   isLoading: boolean;
+  onStopGenerating: () => void;
 }
 
 const FilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRemove }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
+        if (!file.type.startsWith('application/pdf')) {
+            const objectUrl = URL.createObjectURL(file);
+            setPreviewUrl(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        }
     }, [file]);
     
-    if (!previewUrl) return null;
-
     let previewElement;
     if (file.type.startsWith('image/')) {
         previewElement = <img src={previewUrl} alt="Preview" className="max-h-40 rounded-lg" />;
@@ -26,6 +29,13 @@ const FilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onR
         previewElement = <video src={previewUrl} controls className="max-h-40 rounded-lg" />;
     } else if (file.type.startsWith('audio/')) {
         previewElement = <audio src={previewUrl} controls />;
+    } else if (file.type === 'application/pdf') {
+        previewElement = (
+             <div className="flex items-center gap-2 p-2 bg-gray-700 rounded-lg">
+                <PdfIcon className="w-6 h-6 text-red-400 flex-shrink-0" />
+                <span className="text-sm text-gray-200 truncate">{file.name}</span>
+            </div>
+        )
     } else {
         previewElement = <div className="text-sm p-2 bg-gray-700 rounded-lg">{file.name}</div>
     }
@@ -45,7 +55,7 @@ const FilePreview: React.FC<{ file: File; onRemove: () => void }> = ({ file, onR
 };
 
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, onStopGenerating }) => {
   const [input, setInput] = useState('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   
@@ -122,22 +132,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }
             rows={1}
             disabled={isLoading}
           />
-          <button
-            onClick={handleSend}
-            disabled={isLoading || (!input.trim() && !mediaFile)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-            aria-label="Send message"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+           {isLoading ? (
+            <button
+                onClick={onStopGenerating}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+                aria-label="Stop generating"
+            >
+                <StopIcon className="w-5 h-5" />
+            </button>
             ) : (
-              <SendIcon className="w-5 h-5" />
+            <button
+                onClick={handleSend}
+                disabled={!input.trim() && !mediaFile}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-600 text-white disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                aria-label="Send message"
+            >
+                <SendIcon className="w-5 h-5" />
+            </button>
             )}
-          </button>
         </div>
       </div>
       <p className="text-xs text-center text-gray-500 pt-3">
-        daniel ferrero puede cometer errores. Considera verificar la información importante.
+        Ferre puede cometer errores. Considera verificar la información importante.
       </p>
     </div>
   );

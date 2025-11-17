@@ -2,6 +2,7 @@ import React from 'react';
 import { Message, Role } from '../types';
 import { GeminiIcon } from './icons/GeminiIcon';
 import { UserIcon } from './icons/UserIcon';
+import { PdfIcon } from './icons/PdfIcon';
 
 interface ChatMessageProps {
   message: Message;
@@ -19,8 +20,22 @@ const MediaPreview: React.FC<{ media: Message['media'] }> = ({ media }) => {
     if (media.type.startsWith('audio/')) {
         return <audio src={media.url} controls className="mb-2" />;
     }
-    // For PDFs and other types, we might just show the name or a generic icon, 
-    // but for now we won't render a preview in the chat history.
+    if (media.type === 'application/pdf') {
+        return (
+            <div className="flex items-center gap-2 p-2 mb-2 bg-gray-700 rounded-lg max-w-xs">
+                <PdfIcon className="w-6 h-6 text-red-400 flex-shrink-0" />
+                <span className="text-sm text-gray-200 truncate">{media.name}</span>
+            </div>
+        )
+    }
+    // Fallback for other file types from history
+    if (media.name) {
+         return (
+            <div className="flex items-center gap-2 p-2 mb-2 bg-gray-700 rounded-lg max-w-xs">
+                <span className="text-sm text-gray-200 truncate">[Archivo adjunto: {media.name}]</span>
+            </div>
+        )
+    }
     return null;
 };
 

@@ -4,6 +4,7 @@ import { Message, Role, GroundingSource, Media } from './types';
 import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
+import { GeminiIcon } from './components/icons/GeminiIcon';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -19,6 +20,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [chatSession, setChatSession] = useState<Chat | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const stopGenerationRef = useRef<boolean>(false);
 
   useEffect(() => {
     const initChat = async () => {
@@ -28,7 +30,7 @@ const App: React.FC = () => {
           model: 'gemini-2.5-flash',
           config: {
             tools: [{googleSearch: {}}],
-            systemInstruction: `Eres un asistente servicial y amigable. Tu nombre es daniel ferrero. Responde en español.
+            systemInstruction: `Eres un asistente servicial y amigable. Tu nombre es Ferre. Responde en español.
 
 Sigue estos principios para todas tus respuestas:
 - Claridad: Tus respuestas deben ser fáciles de entender. Evita la jerga innecesaria y las frases enrevesadas. Si usas términos técnicos, intenta explicarlos.
@@ -44,7 +46,7 @@ Sigue estos principios para todas tus respuestas:
         });
         setChatSession(newChatSession);
          setChatHistory([
-          { role: Role.MODEL, parts: '¡Hola! ¿Cómo puedo ayudarte hoy? Puedes hacerme una pregunta, subir una imagen, un documento, un audio o un video.' }
+          { role: Role.MODEL, parts: '¡Hola! Soy Ferre. ¿Cómo puedo ayudarte hoy? Puedes hacerme una pregunta, subir una imagen, un documento PDF, un audio o un video.' }
         ]);
       } catch (error) {
         console.error("Initialization error:", error);
@@ -60,10 +62,15 @@ Sigue estos principios para todas tus respuestas:
     }
   }, [chatHistory]);
 
+  const handleStopGenerating = () => {
+    stopGenerationRef.current = true;
+  };
+
   const handleSendMessage = async (userInput: string, mediaFile?: File | null) => {
     if (!chatSession) return;
 
     setIsLoading(true);
+    stopGenerationRef.current = false;
     
     let mediaPreview: Media | undefined;
     if (mediaFile) {
@@ -102,6 +109,10 @@ Sigue estos principios para todas tus respuestas:
       let groundingSources: GroundingSource[] = [];
 
       for await (const chunk of stream) {
+        if (stopGenerationRef.current) {
+            break; 
+        }
+
         const chunkText = chunk.text;
         fullResponse += chunkText;
 
@@ -135,6 +146,7 @@ Sigue estos principios para todas tus respuestas:
       });
     } finally {
       setIsLoading(false);
+      stopGenerationRef.current = false;
     }
   };
   
@@ -149,19 +161,17 @@ Sigue estos principios para todas tus respuestas:
           {isLoading && chatHistory[chatHistory.length - 1]?.parts === '' && (
               <div className="flex items-start gap-4 p-4 md:p-6">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-purple-500">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-75"></div>
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150"></div>
+                  <GeminiIcon className="w-5 h-5 animate-pulse" />
                 </div>
                 <div className="flex-grow text-gray-400 pt-1 italic">
-                  Pensando...
+                  Ferre está pensando...
                 </div>
               </div>
           )}
         </div>
       </main>
       <footer className="w-full sticky bottom-0 left-0 bg-gray-900/80 backdrop-blur-sm">
-        <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+        <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} onStopGenerating={handleStopGenerating} />
       </footer>
     </div>
   );
